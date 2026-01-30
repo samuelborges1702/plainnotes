@@ -112,22 +112,44 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ fileTree })
   },
 
-  // Refresh file tree for all sources
+  // Refresh file tree for all sources and validate them
   refreshFileTree: async () => {
     const sources = get().sources
     const fileTree = new Map<string, FileInfo[]>()
+    const validatedSources: FolderSource[] = []
 
     for (const source of sources) {
       try {
+        const exists = await window.api.fileExists(source.path)
+        if (!exists) {
+          validatedSources.push({
+            ...source,
+            isValid: false,
+            error: 'Folder not found',
+          })
+          fileTree.set(source.path, [])
+          continue
+        }
+
         const files = await window.api.listFiles(source.path)
+        validatedSources.push({
+          ...source,
+          isValid: true,
+          error: undefined,
+        })
         fileTree.set(source.path, files)
       } catch (error) {
         console.error(`Failed to list files for ${source.path}:`, error)
+        validatedSources.push({
+          ...source,
+          isValid: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        })
         fileTree.set(source.path, [])
       }
     }
 
-    set({ fileTree })
+    set({ sources: validatedSources, fileTree })
   },
 
   // Open a file

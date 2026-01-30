@@ -1,12 +1,28 @@
 import { useState } from 'react'
-import { FolderPlus, ChevronRight, FileText, Folder, ChevronDown } from 'lucide-react'
+import {
+  FolderPlus,
+  ChevronRight,
+  FileText,
+  Folder,
+  ChevronDown,
+  X,
+  AlertTriangle,
+} from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
 import type { FileInfo } from '@shared/types/file'
 import { clsx } from 'clsx'
 
 export function Sidebar() {
-  const { sources, fileTree, currentFile, sidebarWidth, isSidebarCollapsed, addSource, openFile } =
-    useAppStore()
+  const {
+    sources,
+    fileTree,
+    currentFile,
+    sidebarWidth,
+    isSidebarCollapsed,
+    addSource,
+    removeSource,
+    openFile,
+  } = useAppStore()
 
   const handleAddFolder = async () => {
     const path = await window.api.selectFolder()
@@ -56,6 +72,9 @@ export function Sidebar() {
               files={fileTree.get(source.path) || []}
               currentFilePath={currentFile?.path}
               onFileSelect={openFile}
+              onRemove={() => removeSource(source.path)}
+              isValid={source.isValid}
+              error={source.error}
             />
           ))
         )}
@@ -70,37 +89,99 @@ interface FolderSectionProps {
   files: FileInfo[]
   currentFilePath?: string
   onFileSelect: (path: string) => void
+  onRemove: () => void
+  isValid?: boolean
+  error?: string
 }
 
-function FolderSection({ name, files, currentFilePath, onFileSelect }: FolderSectionProps) {
+function FolderSection({
+  name,
+  files,
+  currentFilePath,
+  onFileSelect,
+  onRemove,
+  isValid = true,
+  error,
+}: FolderSectionProps) {
   const [isExpanded, setIsExpanded] = useState(true)
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
+
+  const handleRemove = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (showRemoveConfirm) {
+      onRemove()
+      setShowRemoveConfirm(false)
+    } else {
+      setShowRemoveConfirm(true)
+      // Auto-hide confirm after 3 seconds
+      setTimeout(() => setShowRemoveConfirm(false), 3000)
+    }
+  }
 
   return (
-    <div className="mb-2">
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center gap-1 w-full px-3 py-1.5 text-left text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
-      >
-        {isExpanded ? (
-          <ChevronDown className="w-4 h-4 text-text-muted" />
-        ) : (
-          <ChevronRight className="w-4 h-4 text-text-muted" />
+    <div className="mb-2 group">
+      <div
+        className={clsx(
+          'flex items-center gap-1 w-full px-3 py-1.5 text-left transition-colors',
+          isValid
+            ? 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
+            : 'text-status-error bg-status-error/10'
         )}
-        <Folder className="w-4 h-4 text-accent-yellow" />
-        <span className="text-sm font-medium truncate">{name}</span>
-      </button>
+      >
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center gap-1 flex-1 min-w-0"
+        >
+          {isExpanded ? (
+            <ChevronDown className="w-4 h-4 text-text-muted flex-shrink-0" />
+          ) : (
+            <ChevronRight className="w-4 h-4 text-text-muted flex-shrink-0" />
+          )}
+          {isValid ? (
+            <Folder className="w-4 h-4 text-accent-yellow flex-shrink-0" />
+          ) : (
+            <AlertTriangle className="w-4 h-4 text-status-error flex-shrink-0" />
+          )}
+          <span className="text-sm font-medium truncate">{name}</span>
+        </button>
 
-      {isExpanded && (
+        {/* Remove button */}
+        <button
+          onClick={handleRemove}
+          className={clsx(
+            'p-1 rounded transition-all flex-shrink-0',
+            showRemoveConfirm
+              ? 'bg-status-error text-white'
+              : 'opacity-0 group-hover:opacity-100 text-text-muted hover:text-status-error hover:bg-bg-hover'
+          )}
+          title={showRemoveConfirm ? 'Click again to confirm' : 'Remove folder'}
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* Error message */}
+      {!isValid && error && (
+        <div className="px-3 py-1 text-xs text-status-error bg-status-error/5 border-l-2 border-status-error ml-3">
+          {error}
+        </div>
+      )}
+
+      {isExpanded && isValid && (
         <div className="ml-3">
-          {files.map((file) => (
-            <FileTreeItem
-              key={file.path}
-              file={file}
-              depth={0}
-              currentFilePath={currentFilePath}
-              onFileSelect={onFileSelect}
-            />
-          ))}
+          {files.length === 0 ? (
+            <div className="px-3 py-2 text-xs text-text-muted italic">No .txt files found</div>
+          ) : (
+            files.map((file) => (
+              <FileTreeItem
+                key={file.path}
+                file={file}
+                depth={0}
+                currentFilePath={currentFilePath}
+                onFileSelect={onFileSelect}
+              />
+            ))
+          )}
         </div>
       )}
     </div>

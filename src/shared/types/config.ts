@@ -2,6 +2,8 @@ export interface FolderSource {
   path: string
   name: string
   addedAt: number
+  isValid?: boolean
+  error?: string
 }
 
 export interface WindowBounds {
