@@ -1,6 +1,63 @@
-import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view'
+import {
+  Decoration,
+  DecorationSet,
+  EditorView,
+  ViewPlugin,
+  ViewUpdate,
+  WidgetType,
+} from '@codemirror/view'
 import { syntaxTree } from '@codemirror/language'
 import { Range } from '@codemirror/state'
+
+/**
+ * Widget for rendering inline images
+ */
+class ImageWidget extends WidgetType {
+  constructor(
+    readonly src: string,
+    readonly alt: string
+  ) {
+    super()
+  }
+
+  eq(other: ImageWidget) {
+    return other.src === this.src && other.alt === this.alt
+  }
+
+  toDOM() {
+    const container = document.createElement('span')
+    container.className = 'cm-image-widget'
+
+    const img = document.createElement('img')
+    img.src = this.src
+    img.alt = this.alt
+    img.title = this.alt || this.src
+    img.className = 'cm-inline-image'
+    img.style.maxWidth = '100%'
+    img.style.maxHeight = '300px'
+    img.style.borderRadius = '4px'
+    img.style.marginTop = '8px'
+    img.style.marginBottom = '8px'
+    img.style.display = 'block'
+
+    img.onerror = () => {
+      img.style.display = 'none'
+      const errorSpan = document.createElement('span')
+      errorSpan.className = 'cm-image-error'
+      errorSpan.textContent = `[Image not found: ${this.alt || this.src}]`
+      errorSpan.style.color = '#ff6b6b'
+      errorSpan.style.fontSize = '0.875em'
+      container.appendChild(errorSpan)
+    }
+
+    container.appendChild(img)
+    return container
+  }
+
+  ignoreEvent() {
+    return false
+  }
+}
 
 /**
  * CodeMirror 6 plugin that adds visual decorations for markdown syntax.
@@ -116,6 +173,21 @@ export const markdownPreviewPlugin = ViewPlugin.fromClass(
               decorations.push(
                 Decoration.mark({ class: 'cm-list-bullet' }).range(node.from, node.to)
               )
+            }
+
+            // Images - render inline
+            if (node.name === 'Image') {
+              const text = view.state.doc.sliceString(node.from, node.to)
+              const imageMatch = text.match(/!\[([^\]]*)\]\(([^)]+)\)/)
+              if (imageMatch) {
+                const [, alt, src] = imageMatch
+                decorations.push(
+                  Decoration.widget({
+                    widget: new ImageWidget(src, alt),
+                    side: 1,
+                  }).range(node.to)
+                )
+              }
             }
           },
         })
