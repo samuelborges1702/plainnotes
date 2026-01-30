@@ -5,8 +5,8 @@
 | Field | Value |
 |-------|-------|
 | Project | PlainNotes |
-| Version | 1.1 |
-| Status | In Progress (Epic 1 Complete) |
+| Version | 1.2 |
+| Status | Complete (Epic 1 & Epic 2 Done) |
 | Author | Orion (AIOS Master) |
 | Created | 2026-01-30 |
 
@@ -35,6 +35,7 @@ A solução proposta é um editor desktop leve que lê/escreve arquivos .txt pur
 |------|---------|-------------|--------|
 | 2026-01-30 | 1.0 | Initial PRD creation | Orion |
 | 2026-01-30 | 1.1 | Epic 1 QA Review - PASS (6/6 stories complete) | Quinn (QA) |
+| 2026-01-30 | 1.2 | Epic 2 QA Review - PASS (4/4 stories complete) | Quinn (QA) |
 
 ---
 
@@ -398,6 +399,44 @@ Implementar funcionalidades de produtividade: autosave, recentes, busca global e
 6. Esc: Fechar modais
 7. Barra de status mostra contagem de palavras/caracteres
 8. Tooltips indicam atalhos em botões
+
+---
+
+### Epic 2 - QA Review Summary
+
+**Review Date:** 2026-01-30
+**Reviewer:** Quinn (QA Agent)
+**Gate Decision:** ✅ **PASS**
+
+| Story | Status | Notes |
+|-------|--------|-------|
+| 2.1 Autosave | ⏭️ SKIP | Implemented as part of Story 1.4 (debounced save on change) |
+| 2.2 Recent Notes Menu | ✅ PASS | RecentNotesSection with persistence and clear option |
+| 2.3 Global Search | ✅ PASS | SearchModal with Ctrl+Shift+F, highlighted matches |
+| 2.4 Tag System | ✅ PASS | Tag extraction, TagsSection with filter support |
+| 2.5 Keyboard Shortcuts | ✅ PASS | All shortcuts implemented + StatusBar with hints |
+
+**Quality Metrics:**
+- Lint: 0 warnings
+- TypeCheck: No errors
+- Tests: 15 passed
+- Build: Success
+
+**Files Implemented:**
+- `src/renderer/hooks/useKeyboardShortcuts.ts` - Global keyboard shortcuts hook
+- `src/renderer/components/modals/SearchModal.tsx` - Global search modal
+- `src/renderer/components/modals/QuickOpenModal.tsx` - Quick file open (Ctrl+P)
+- `src/renderer/components/modals/SettingsModal.tsx` - Settings with shortcuts reference
+- `src/renderer/components/layout/Sidebar.tsx` - Added RecentNotesSection, TagsSection
+- `src/renderer/components/layout/StatusBar.tsx` - Word/char count, shortcut hints
+- `src/renderer/stores/appStore.ts` - Tag extraction and filtering logic
+
+**Key Features:**
+- Recent notes with session persistence
+- Global search with highlighted snippets
+- Tag-based filtering (#tag syntax)
+- Keyboard-first workflow
+- Status bar with real-time stats
 
 ---
 
