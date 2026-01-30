@@ -9,6 +9,9 @@ import {
   AlertTriangle,
   FilePlus,
   Trash2,
+  Clock,
+  Tag,
+  Filter,
 } from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
 import { NewNoteModal } from '../modals/NewNoteModal'
@@ -19,15 +22,20 @@ import { clsx } from 'clsx'
 export function Sidebar() {
   const {
     sources,
-    fileTree,
     currentFile,
     sidebarWidth,
     isSidebarCollapsed,
+    recentFiles,
+    allTags,
+    activeTagFilter,
     addSource,
     removeSource,
     openFile,
     createNote,
     deleteNote,
+    clearRecent,
+    setTagFilter,
+    getFilteredFiles,
   } = useAppStore()
 
   // New note modal state
@@ -86,6 +94,42 @@ export function Sidebar() {
           </button>
         </div>
 
+        {/* Tags Section */}
+        {allTags.size > 0 && (
+          <TagsSection
+            tags={allTags}
+            activeTagFilter={activeTagFilter}
+            onTagSelect={setTagFilter}
+          />
+        )}
+
+        {/* Recent Notes Section */}
+        {recentFiles.length > 0 && !activeTagFilter && (
+          <RecentNotesSection
+            recentFiles={recentFiles}
+            currentFilePath={currentFile?.path}
+            onFileSelect={openFile}
+            onClear={clearRecent}
+          />
+        )}
+
+        {/* Active Filter Indicator */}
+        {activeTagFilter && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-accent-purple/10 border-b border-border-subtle">
+            <Filter className="w-4 h-4 text-accent-purple" />
+            <span className="text-sm text-accent-purple">
+              Filtering by <span className="font-medium">#{activeTagFilter}</span>
+            </span>
+            <button
+              onClick={() => setTagFilter(null)}
+              className="ml-auto p-1 rounded hover:bg-bg-hover text-text-muted hover:text-text-primary transition-colors"
+              title="Clear filter"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {/* File Tree */}
         <div className="flex-1 overflow-y-auto py-2">
           {sources.length === 0 ? (
@@ -103,7 +147,7 @@ export function Sidebar() {
                 key={source.path}
                 name={source.name}
                 path={source.path}
-                files={fileTree.get(source.path) || []}
+                files={getFilteredFiles(source.path)}
                 currentFilePath={currentFile?.path}
                 onFileSelect={openFile}
                 onRemove={() => removeSource(source.path)}
@@ -111,6 +155,7 @@ export function Sidebar() {
                 onDeleteNote={handleDeleteNote}
                 isValid={source.isValid}
                 error={source.error}
+                isFiltered={!!activeTagFilter}
               />
             ))
           )}
@@ -150,6 +195,7 @@ interface FolderSectionProps {
   onDeleteNote: (path: string, name: string) => void
   isValid?: boolean
   error?: string
+  isFiltered?: boolean
 }
 
 function FolderSection({
@@ -162,6 +208,7 @@ function FolderSection({
   onDeleteNote,
   isValid = true,
   error,
+  isFiltered = false,
 }: FolderSectionProps) {
   const [isExpanded, setIsExpanded] = useState(true)
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
@@ -244,7 +291,9 @@ function FolderSection({
       {isExpanded && isValid && (
         <div className="ml-3">
           {files.length === 0 ? (
-            <div className="px-3 py-2 text-xs text-text-muted italic">No .txt files found</div>
+            <div className="px-3 py-2 text-xs text-text-muted italic">
+              {isFiltered ? 'No matching notes' : 'No .txt files found'}
+            </div>
           ) : (
             files.map((file) => (
               <FileTreeItem
@@ -344,6 +393,169 @@ function FileTreeItem({ file, depth, currentFilePath, onFileSelect, onDeleteNote
       >
         <Trash2 className="w-3 h-3" />
       </button>
+    </div>
+  )
+}
+
+interface RecentNotesSectionProps {
+  recentFiles: string[]
+  currentFilePath?: string
+  onFileSelect: (path: string) => void
+  onClear: () => void
+}
+
+function RecentNotesSection({
+  recentFiles,
+  currentFilePath,
+  onFileSelect,
+  onClear,
+}: RecentNotesSectionProps) {
+  const [isExpanded, setIsExpanded] = useState(true)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
+
+  const handleClear = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (showClearConfirm) {
+      onClear()
+      setShowClearConfirm(false)
+    } else {
+      setShowClearConfirm(true)
+      // Auto-hide confirm after 3 seconds
+      setTimeout(() => setShowClearConfirm(false), 3000)
+    }
+  }
+
+  // Extract file name from path
+  const getFileName = (path: string) => {
+    const name = path.split(/[/\\]/).pop() || 'Untitled'
+    return name.replace('.txt', '')
+  }
+
+  return (
+    <div className="border-b border-border-subtle">
+      <div className="flex items-center gap-1 w-full px-3 py-1.5 text-left text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors group/recent">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center gap-1 flex-1 min-w-0"
+        >
+          {isExpanded ? (
+            <ChevronDown className="w-4 h-4 text-text-muted flex-shrink-0" />
+          ) : (
+            <ChevronRight className="w-4 h-4 text-text-muted flex-shrink-0" />
+          )}
+          <Clock className="w-4 h-4 text-accent-purple flex-shrink-0" />
+          <span className="text-sm font-medium">Recent</span>
+          <span className="text-xs text-text-muted ml-1">({recentFiles.length})</span>
+        </button>
+
+        {/* Clear button */}
+        <button
+          onClick={handleClear}
+          className={clsx(
+            'p-1 rounded transition-all flex-shrink-0',
+            showClearConfirm
+              ? 'bg-status-error text-white'
+              : 'opacity-0 group-hover/recent:opacity-100 text-text-muted hover:text-status-error hover:bg-bg-hover'
+          )}
+          title={showClearConfirm ? 'Click again to confirm' : 'Clear recent notes'}
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {isExpanded && (
+        <div className="pb-2">
+          {recentFiles.map((path) => {
+            const fileName = getFileName(path)
+            const isActive = path === currentFilePath
+
+            return (
+              <button
+                key={path}
+                onClick={() => onFileSelect(path)}
+                className={clsx(
+                  'flex items-center gap-2 w-full px-3 py-1 text-left transition-colors',
+                  isActive
+                    ? 'bg-bg-active text-text-primary border-l-2 border-accent-cyan'
+                    : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
+                )}
+                title={path}
+              >
+                <FileText className="w-3.5 h-3.5 text-accent-cyan flex-shrink-0 ml-5" />
+                <span className="text-sm truncate">{fileName}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+interface TagsSectionProps {
+  tags: Map<string, number>
+  activeTagFilter: string | null
+  onTagSelect: (tag: string | null) => void
+}
+
+function TagsSection({ tags, activeTagFilter, onTagSelect }: TagsSectionProps) {
+  const [isExpanded, setIsExpanded] = useState(true)
+
+  // Sort tags by count (descending), then alphabetically
+  const sortedTags = Array.from(tags.entries()).sort((a, b) => {
+    if (b[1] !== a[1]) return b[1] - a[1]
+    return a[0].localeCompare(b[0])
+  })
+
+  return (
+    <div className="border-b border-border-subtle">
+      <div className="flex items-center gap-1 w-full px-3 py-1.5 text-left text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors group/tags">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center gap-1 flex-1 min-w-0"
+        >
+          {isExpanded ? (
+            <ChevronDown className="w-4 h-4 text-text-muted flex-shrink-0" />
+          ) : (
+            <ChevronRight className="w-4 h-4 text-text-muted flex-shrink-0" />
+          )}
+          <Tag className="w-4 h-4 text-accent-purple flex-shrink-0" />
+          <span className="text-sm font-medium">Tags</span>
+          <span className="text-xs text-text-muted ml-1">({tags.size})</span>
+        </button>
+      </div>
+
+      {isExpanded && (
+        <div className="px-3 pb-2 flex flex-wrap gap-1.5">
+          {sortedTags.map(([tag, count]) => {
+            const isActive = activeTagFilter === tag
+
+            return (
+              <button
+                key={tag}
+                onClick={() => onTagSelect(isActive ? null : tag)}
+                className={clsx(
+                  'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium transition-all',
+                  isActive
+                    ? 'bg-accent-purple text-white'
+                    : 'bg-accent-purple/10 text-accent-purple border border-accent-purple/30 hover:bg-accent-purple/20 hover:border-accent-purple/50'
+                )}
+                title={`${count} note${count !== 1 ? 's' : ''} with #${tag}`}
+              >
+                <span>#{tag}</span>
+                <span
+                  className={clsx(
+                    'text-[10px] px-1 rounded-full',
+                    isActive ? 'bg-white/20' : 'bg-accent-purple/20'
+                  )}
+                >
+                  {count}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

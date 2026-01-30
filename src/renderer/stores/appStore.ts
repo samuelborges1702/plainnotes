@@ -2,6 +2,17 @@ import { create } from 'zustand'
 import type { FolderSource, AppConfig } from '@shared/types/config'
 import type { FileInfo } from '@shared/types/file'
 
+// Tag extraction regex - matches #tag patterns
+const TAG_REGEX = /#[a-zA-Z0-9_-]+/g
+
+// Helper to extract tags from content
+function extractTagsFromContent(content: string): string[] {
+  const matches = content.match(TAG_REGEX)
+  if (!matches) return []
+  // Remove the # prefix and deduplicate
+  return [...new Set(matches.map((tag) => tag.substring(1)))]
+}
+
 interface AppState {
   // Config
   config: AppConfig | null
@@ -22,6 +33,11 @@ interface AppState {
 
   // Recent Files
   recentFiles: string[]
+
+  // Tags
+  allTags: Map<string, number> // tag name -> count
+  activeTagFilter: string | null
+  fileTagsCache: Map<string, string[]> // file path -> tags in that file
 
   // UI State
   sidebarWidth: number
@@ -49,6 +65,11 @@ interface AppState {
   toggleSidebar: () => void
 
   buildSearchIndex: () => Promise<void>
+
+  // Tag actions
+  extractAllTags: () => Promise<void>
+  setTagFilter: (tag: string | null) => void
+  getFilteredFiles: (sourcePath: string) => FileInfo[]
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -61,6 +82,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   isDirty: false,
   saveStatus: 'idle',
   recentFiles: [],
+  allTags: new Map(),
+  activeTagFilter: null,
+  fileTagsCache: new Map(),
   sidebarWidth: 260,
   isSidebarCollapsed: false,
 
@@ -79,6 +103,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
       // Load file trees for all sources
       await get().refreshFileTree()
+
+      // Extract tags from all files
+      await get().extractAllTags()
     } catch (error) {
       console.error('Failed to load config:', error)
       set({ isLoading: false })
@@ -102,6 +129,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     await window.api.setConfig('sources', updatedSources)
     await get().refreshFileTree()
     await get().buildSearchIndex()
+    await get().extractAllTags()
   },
 
   // Remove a folder source
@@ -210,6 +238,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       await window.api.writeFile(currentFile.path, currentFile.content)
       set({ isDirty: false, saveStatus: 'saved' })
 
+      // Update tags for this file after save
+      await get().extractAllTags()
+
       // Reset status after 2 seconds
       setTimeout(() => {
         if (get().saveStatus === 'saved') {
@@ -248,6 +279,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     const recentFiles = get().recentFiles.filter((p) => p !== path)
     set({ recentFiles })
     await window.api.setConfig('recentFiles', recentFiles)
+
+    // Update tags after deletion
+    await get().extractAllTags()
   },
 
   // Add to recent files
@@ -284,5 +318,87 @@ export const useAppStore = create<AppState>((set, get) => ({
     } catch (error) {
       console.error('Failed to build search index:', error)
     }
+  },
+
+  // Extract all tags from all files in all sources
+  extractAllTags: async () => {
+    const fileTree = get().fileTree
+    const allTags = new Map<string, number>()
+    const fileTagsCache = new Map<string, string[]>()
+
+    // Helper to recursively get all file paths from FileInfo tree
+    const getAllFilePaths = (files: FileInfo[]): string[] => {
+      const paths: string[] = []
+      for (const file of files) {
+        if (file.isDirectory && file.children) {
+          paths.push(...getAllFilePaths(file.children))
+        } else if (!file.isDirectory) {
+          paths.push(file.path)
+        }
+      }
+      return paths
+    }
+
+    // Collect all file paths
+    const allFilePaths: string[] = []
+    for (const files of fileTree.values()) {
+      allFilePaths.push(...getAllFilePaths(files))
+    }
+
+    // Read each file and extract tags
+    for (const filePath of allFilePaths) {
+      try {
+        const content = await window.api.readFile(filePath)
+        const tags = extractTagsFromContent(content)
+        fileTagsCache.set(filePath, tags)
+
+        // Update tag counts
+        for (const tag of tags) {
+          allTags.set(tag, (allTags.get(tag) || 0) + 1)
+        }
+      } catch (error) {
+        console.error(`Failed to read file for tags: ${filePath}`, error)
+      }
+    }
+
+    set({ allTags, fileTagsCache })
+  },
+
+  // Set active tag filter
+  setTagFilter: (tag: string | null) => {
+    set({ activeTagFilter: tag })
+  },
+
+  // Get filtered files for a source based on active tag filter
+  getFilteredFiles: (sourcePath: string): FileInfo[] => {
+    const { fileTree, activeTagFilter, fileTagsCache } = get()
+    const files = fileTree.get(sourcePath) || []
+
+    if (!activeTagFilter) {
+      return files
+    }
+
+    // Helper to filter files recursively
+    const filterFiles = (fileList: FileInfo[]): FileInfo[] => {
+      const result: FileInfo[] = []
+
+      for (const file of fileList) {
+        if (file.isDirectory && file.children) {
+          const filteredChildren = filterFiles(file.children)
+          if (filteredChildren.length > 0) {
+            result.push({ ...file, children: filteredChildren })
+          }
+        } else if (!file.isDirectory) {
+          const fileTags = fileTagsCache.get(file.path) || []
+          if (fileTags.includes(activeTagFilter)) {
+            result.push(file)
+          }
+        }
+      }
+
+      return result
+    }
+
+    return filterFiles(files)
   },
 }))
