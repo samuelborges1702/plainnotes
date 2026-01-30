@@ -13,6 +13,7 @@ import {
   Tag,
   Filter,
   Edit3,
+  Settings,
 } from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
 import { NewNoteModal } from '../modals/NewNoteModal'
@@ -21,7 +22,11 @@ import { RenameModal } from '../modals/RenameModal'
 import type { FileInfo } from '@shared/types/file'
 import { clsx } from 'clsx'
 
-export function Sidebar() {
+interface SidebarProps {
+  onOpenSettings?: () => void
+}
+
+export function Sidebar({ onOpenSettings }: SidebarProps) {
   const {
     sources,
     currentFile,
@@ -166,6 +171,17 @@ export function Sidebar() {
             >
               <FolderPlus className="w-5 h-5 pointer-events-none" />
             </button>
+            {onOpenSettings && (
+              <button
+                onClick={onOpenSettings}
+                className="sidebar-action-btn p-1.5 rounded-md text-text-muted hover:text-accent-cyan hover:border hover:border-accent-cyan transition-colors"
+                title="Settings"
+                type="button"
+                style={{ WebkitAppRegion: 'no-drag', pointerEvents: 'auto' } as React.CSSProperties}
+              >
+                <Settings className="w-5 h-5 pointer-events-none" />
+              </button>
+            )}
           </div>
         </div>
 

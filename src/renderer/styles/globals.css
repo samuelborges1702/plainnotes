@@ -170,3 +170,55 @@
     @apply bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent;
   }
 }
+
+/* Floating Action Button styles */
+@layer components {
+  .fab-trigger {
+    -webkit-app-region: no-drag !important;
+    pointer-events: auto !important;
+  }
+
+  .fab-trigger:hover::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+    z-index: -1;
+    opacity: 1;
+  }
+
+  .fab-item {
+    -webkit-app-region: no-drag !important;
+    pointer-events: auto !important;
+  }
+
+  .fab-item:hover {
+    transform: scale(1.1);
+  }
+
+  .fab-label {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Color-specific hover effects for FAB items */
+  .fab-item:hover.hover\:border-accent-cyan {
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 16px rgba(0, 212, 255, 0.3);
+  }
+
+  .fab-item:hover.hover\:border-accent-purple {
+    border-color: var(--accent-purple);
+    box-shadow: 0 0 16px rgba(170, 119, 255, 0.3);
+  }
+
+  .fab-item:hover.hover\:border-accent-green {
+    border-color: var(--accent-green);
+    box-shadow: 0 0 16px rgba(0, 255, 136, 0.3);
+  }
+
+  .fab-item:hover.hover\:border-accent-yellow {
+    border-color: var(--accent-yellow);
+    box-shadow: 0 0 16px rgba(255, 204, 0, 0.3);
+  }
+}

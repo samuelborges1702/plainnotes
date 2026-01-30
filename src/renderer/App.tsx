@@ -3,6 +3,7 @@ import { TitleBar } from './components/layout/TitleBar'
 import { Sidebar } from './components/layout/Sidebar'
 import { Editor } from './components/layout/Editor'
 import { StatusBar } from './components/layout/StatusBar'
+import { FloatingActionButton } from './components/layout/FloatingActionButton'
 import { SearchModal } from './components/modals/SearchModal'
 import { QuickOpenModal } from './components/modals/QuickOpenModal'
 import { SettingsModal } from './components/modals/SettingsModal'
@@ -104,7 +105,7 @@ function App() {
     <div className="flex flex-col h-screen overflow-hidden">
       <TitleBar />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
+        <Sidebar onOpenSettings={handleSettings} />
         <Editor />
       </div>
       <StatusBar
@@ -142,6 +143,14 @@ function App() {
           onCreate={(name) => createNote(firstSource.path, name)}
         />
       )}
+
+      {/* Floating Action Button */}
+      <FloatingActionButton
+        onSearch={handleGlobalSearch}
+        onQuickOpen={handleQuickOpen}
+        onSettings={handleSettings}
+        onNewNote={sources.length > 0 ? handleNewNote : undefined}
+      />
     </div>
   )
 }
