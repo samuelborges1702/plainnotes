@@ -22,35 +22,43 @@ export function TitleBar() {
   const handleClose = () => window.api.closeWindow()
 
   return (
-    <header className="flex items-center justify-between h-10 bg-bg-elevated border-b border-border-subtle titlebar-drag select-none z-50">
-      {/* App title - empty, title is in sidebar */}
-      <div className="flex items-center gap-2 px-4 titlebar-no-drag">
-        {/* Drag area indicator */}
-      </div>
+    <header className="flex items-center justify-between h-10 bg-bg-elevated border-b border-border-subtle select-none z-50">
+      {/* Drag region - ONLY this div is draggable */}
+      <div className="flex-1 h-full titlebar-drag" />
 
-      {/* Window controls - must be outside drag region */}
-      <div className="flex items-center h-full titlebar-no-drag" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+      {/* Window controls - completely OUTSIDE drag region with explicit styles */}
+      <div
+        className="window-controls flex items-center h-full"
+        style={{
+          WebkitAppRegion: 'no-drag',
+          position: 'relative',
+          zIndex: 9999,
+        } as React.CSSProperties}
+      >
         <button
           onClick={handleMinimize}
-          className="flex items-center justify-center w-12 h-10 text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors cursor-pointer"
+          className="window-control-btn flex items-center justify-center w-12 h-10 text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
           title="Minimize"
           type="button"
+          style={{ WebkitAppRegion: 'no-drag', pointerEvents: 'auto' } as React.CSSProperties}
         >
           <Minus className="w-4 h-4 pointer-events-none" />
         </button>
         <button
           onClick={handleMaximize}
-          className="flex items-center justify-center w-12 h-10 text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors cursor-pointer"
+          className="window-control-btn flex items-center justify-center w-12 h-10 text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
           title={isMaximized ? 'Restore' : 'Maximize'}
           type="button"
+          style={{ WebkitAppRegion: 'no-drag', pointerEvents: 'auto' } as React.CSSProperties}
         >
           {isMaximized ? <Copy className="w-3.5 h-3.5 pointer-events-none" /> : <Square className="w-3.5 h-3.5 pointer-events-none" />}
         </button>
         <button
           onClick={handleClose}
-          className="flex items-center justify-center w-12 h-10 text-text-secondary hover:text-white hover:bg-status-error transition-colors cursor-pointer"
+          className="window-control-btn flex items-center justify-center w-12 h-10 text-text-secondary hover:text-white hover:bg-status-error transition-colors"
           title="Close"
           type="button"
+          style={{ WebkitAppRegion: 'no-drag', pointerEvents: 'auto' } as React.CSSProperties}
         >
           <X className="w-4 h-4 pointer-events-none" />
         </button>

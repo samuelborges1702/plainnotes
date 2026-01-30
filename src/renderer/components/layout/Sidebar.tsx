@@ -153,13 +153,18 @@ export function Sidebar() {
             <span className="text-text-primary">Plain</span>
             <span className="text-gradient-cyan">Notes</span>
           </h1>
-          <div className="flex items-center gap-1">
+          <div
+            className="flex items-center gap-1"
+            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+          >
             <button
               onClick={handleAddFolder}
-              className="p-1.5 rounded-md text-text-muted hover:text-accent-cyan hover:border hover:border-accent-cyan transition-colors"
+              className="sidebar-action-btn p-1.5 rounded-md text-text-muted hover:text-accent-cyan hover:border hover:border-accent-cyan transition-colors"
               title="Add Folder"
+              type="button"
+              style={{ WebkitAppRegion: 'no-drag', pointerEvents: 'auto' } as React.CSSProperties}
             >
-              <FolderPlus className="w-5 h-5" />
+              <FolderPlus className="w-5 h-5 pointer-events-none" />
             </button>
           </div>
         </div>

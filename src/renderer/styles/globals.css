@@ -66,6 +66,27 @@
     pointer-events: auto;
   }
 
+  /* Window controls container - must override any drag region inheritance */
+  .window-controls {
+    -webkit-app-region: no-drag !important;
+    pointer-events: auto !important;
+    z-index: 9999;
+  }
+
+  .window-controls button,
+  .window-control-btn {
+    -webkit-app-region: no-drag !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+  }
+
+  /* Sidebar action buttons - ensure they're clickable */
+  .sidebar-action-btn {
+    -webkit-app-region: no-drag !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+  }
+
   /* Accent border glow */
   .border-glow-cyan {
     box-shadow: 0 0 0 1px theme('colors.accent.cyan / 50%'),
