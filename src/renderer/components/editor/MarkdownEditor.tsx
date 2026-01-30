@@ -103,6 +103,7 @@ const darkTheme = EditorView.theme(
     '.cm-link': {
       color: '#00d4ff',
       textDecoration: 'underline',
+      cursor: 'pointer',
     },
     '.cm-url': {
       color: '#666666',
@@ -219,6 +220,36 @@ export function MarkdownEditor({ content, onChange, onSave }: MarkdownEditorProp
       }
     })
 
+    // Handle clicks on links
+    const clickHandler = EditorView.domEventHandlers({
+      click: (event, view) => {
+        const target = event.target as HTMLElement
+        // Check if clicked element or parent has cm-link class
+        const linkElement = target.closest('.cm-link')
+        if (linkElement) {
+          const text = view.state.doc.toString()
+          const pos = view.posAtDOM(target)
+          // Find the URL in the surrounding text
+          const lineStart = text.lastIndexOf('\n', pos) + 1
+          const lineEnd = text.indexOf('\n', pos)
+          const line = text.slice(lineStart, lineEnd === -1 ? undefined : lineEnd)
+
+          // Match markdown links [text](url) or raw URLs
+          const linkMatch = line.match(/\[([^\]]+)\]\(([^)]+)\)/) ||
+                           line.match(/(https?:\/\/[^\s)]+)/)
+          if (linkMatch) {
+            const url = linkMatch[2] || linkMatch[1]
+            if (url.startsWith('http://') || url.startsWith('https://')) {
+              event.preventDefault()
+              window.open(url, '_blank')
+              return true
+            }
+          }
+        }
+        return false
+      },
+    })
+
     const state = EditorState.create({
       doc: initialContentRef.current,
       extensions: [
@@ -234,6 +265,7 @@ export function MarkdownEditor({ content, onChange, onSave }: MarkdownEditorProp
         checkboxPlugin,
         placeholder('Start typing your note...'),
         updateListener,
+        clickHandler,
       ],
     })
 
