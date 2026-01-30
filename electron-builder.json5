@@ -22,7 +22,8 @@
   "linux": {
     "target": ["AppImage", "deb"],
     "icon": "resources/icon.png",
-    "category": "Utility"
+    "category": "Utility",
+    "maintainer": "PlainNotes <plainnotes@example.com>"
   },
   "nsis": {
     "oneClick": false,

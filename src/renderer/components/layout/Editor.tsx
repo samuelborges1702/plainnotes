@@ -1,23 +1,11 @@
 import { useEffect, useCallback } from 'react'
 import { FileText, Save } from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
+import { MarkdownEditor } from '../editor/MarkdownEditor'
 import { clsx } from 'clsx'
 
 export function Editor() {
   const { currentFile, isDirty, saveStatus, setContent, saveFile } = useAppStore()
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key === 's') {
-        e.preventDefault()
-        saveFile()
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [saveFile])
 
   // Autosave with debounce
   useEffect(() => {
@@ -31,11 +19,15 @@ export function Editor() {
   }, [currentFile?.content, isDirty, saveFile])
 
   const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      setContent(e.target.value)
+    (content: string) => {
+      setContent(content)
     },
     [setContent]
   )
+
+  const handleSave = useCallback(() => {
+    saveFile()
+  }, [saveFile])
 
   if (!currentFile) {
     return (
@@ -77,14 +69,12 @@ export function Editor() {
         </div>
       </header>
 
-      {/* Editor Content */}
+      {/* Editor Content - CodeMirror with Markdown Live Preview */}
       <div className="flex-1 overflow-hidden">
-        <textarea
-          value={currentFile.content}
+        <MarkdownEditor
+          content={currentFile.content}
           onChange={handleChange}
-          className="w-full h-full p-6 bg-bg-base text-text-primary font-mono text-sm leading-relaxed resize-none focus:outline-none"
-          placeholder="Start typing..."
-          spellCheck={false}
+          onSave={handleSave}
         />
       </div>
     </main>
