@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+@layer base {
+  * {
+    @apply border-border-default;
+  }
+
+  html {
+    @apply scroll-smooth;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  body {
+    @apply bg-bg-base text-text-primary font-sans;
+    overflow: hidden;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border-strong rounded-full;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-text-muted;
+  }
+
+  /* Selection */
+  ::selection {
+    @apply bg-accent-cyan/30 text-text-primary;
+  }
+
+  /* Focus visible */
+  :focus-visible {
+    @apply outline-none ring-1 ring-accent-cyan ring-offset-1 ring-offset-bg-base;
+  }
+}
+
+/* Component styles */
+@layer components {
+  /* Custom title bar drag region */
+  .titlebar-drag {
+    -webkit-app-region: drag;
+  }
+
+  .titlebar-no-drag {
+    -webkit-app-region: no-drag;
+  }
+
+  /* Accent border glow */
+  .border-glow-cyan {
+    box-shadow: 0 0 0 1px theme('colors.accent.cyan / 50%'),
+      0 0 8px theme('colors.accent.cyan / 20%');
+  }
+
+  .border-glow-magenta {
+    box-shadow: 0 0 0 1px theme('colors.accent.magenta / 50%'),
+      0 0 8px theme('colors.accent.magenta / 20%');
+  }
+
+  .border-glow-green {
+    box-shadow: 0 0 0 1px theme('colors.accent.green / 50%'),
+      0 0 8px theme('colors.accent.green / 20%');
+  }
+
+  /* Tag badge */
+  .tag-badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+    @apply border border-accent-purple/50 text-accent-purple bg-accent-purple/10;
+  }
+
+  /* File tree item */
+  .file-tree-item {
+    @apply flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer;
+    @apply text-text-secondary hover:text-text-primary hover:bg-bg-hover;
+    @apply transition-colors duration-150;
+  }
+
+  .file-tree-item.active {
+    @apply bg-bg-active text-text-primary border-l-2 border-accent-cyan;
+  }
+
+  /* Button variants */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-3 py-1.5;
+    @apply rounded-md font-medium text-sm;
+    @apply transition-all duration-150;
+    @apply focus-visible:ring-1 focus-visible:ring-accent-cyan;
+  }
+
+  .btn-primary {
+    @apply btn bg-accent-cyan/10 text-accent-cyan border border-accent-cyan/50;
+    @apply hover:bg-accent-cyan/20 hover:border-accent-cyan;
+  }
+
+  .btn-ghost {
+    @apply btn text-text-secondary hover:text-text-primary hover:bg-bg-hover;
+  }
+
+  .btn-danger {
+    @apply btn bg-status-error/10 text-status-error border border-status-error/50;
+    @apply hover:bg-status-error/20 hover:border-status-error;
+  }
+
+  /* Input */
+  .input {
+    @apply w-full px-3 py-2 rounded-md;
+    @apply bg-bg-surface border border-border-default;
+    @apply text-text-primary placeholder:text-text-muted;
+    @apply focus:border-accent-cyan focus:ring-1 focus:ring-accent-cyan/50;
+    @apply transition-colors duration-150;
+  }
+
+  /* Modal backdrop */
+  .modal-backdrop {
+    @apply fixed inset-0 bg-black/60 backdrop-blur-sm;
+    @apply flex items-center justify-center;
+  }
+
+  .modal-content {
+    @apply bg-bg-elevated border border-border-default rounded-xl;
+    @apply shadow-2xl max-w-lg w-full mx-4;
+    @apply animate-scale-in;
+  }
+}
+
+/* Utility classes */
+@layer utilities {
+  .text-gradient-cyan {
+    @apply bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent;
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
+  "appId": "com.plainnotes.app",
+  "productName": "PlainNotes",
+  "directories": {
+    "output": "release",
+    "buildResources": "resources"
+  },
+  "files": [
+    "dist-electron",
+    "dist"
+  ],
+  "mac": {
+    "target": ["dmg", "zip"],
+    "icon": "resources/icon.icns",
+    "category": "public.app-category.productivity"
+  },
+  "win": {
+    "target": ["nsis", "portable"],
+    "icon": "resources/icon.ico"
+  },
+  "linux": {
+    "target": ["AppImage", "deb"],
+    "icon": "resources/icon.png",
+    "category": "Utility"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true
+  }
+}
