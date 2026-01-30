@@ -56,6 +56,7 @@ interface AppState {
   setSaveStatus: (status: 'idle' | 'saving' | 'saved' | 'error') => void
 
   createNote: (folderPath: string, name: string) => Promise<void>
+  renameNote: (oldPath: string, newName: string) => Promise<string>
   deleteNote: (path: string) => Promise<void>
 
   addToRecent: (path: string) => void
@@ -261,6 +262,31 @@ export const useAppStore = create<AppState>((set, get) => ({
     await get().refreshFileTree()
     await get().openFile(newPath)
     await get().buildSearchIndex()
+  },
+
+  // Rename a note
+  renameNote: async (oldPath: string, newName: string) => {
+    const currentFile = get().currentFile
+    const newPath = await window.api.renameFile(oldPath, newName)
+
+    // Update current file if it's the one being renamed
+    if (currentFile?.path === oldPath) {
+      const name = newPath.split(/[/\\]/).pop() || 'Untitled'
+      set({
+        currentFile: { ...currentFile, path: newPath, name },
+      })
+    }
+
+    // Update recent files
+    const recentFiles = get().recentFiles.map((p) => (p === oldPath ? newPath : p))
+    set({ recentFiles })
+    await window.api.setConfig('recentFiles', recentFiles)
+
+    await get().refreshFileTree()
+    await get().buildSearchIndex()
+    await get().extractAllTags()
+
+    return newPath
   },
 
   // Delete a note

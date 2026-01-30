@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import {
   FolderPlus,
   ChevronRight,
@@ -12,10 +12,12 @@ import {
   Clock,
   Tag,
   Filter,
+  Edit3,
 } from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
 import { NewNoteModal } from '../modals/NewNoteModal'
 import { ConfirmModal } from '../modals/ConfirmModal'
+import { RenameModal } from '../modals/RenameModal'
 import type { FileInfo } from '@shared/types/file'
 import { clsx } from 'clsx'
 
@@ -32,6 +34,7 @@ export function Sidebar() {
     removeSource,
     openFile,
     createNote,
+    renameNote,
     deleteNote,
     clearRecent,
     setTagFilter,
@@ -52,6 +55,16 @@ export function Sidebar() {
     name: string
   }>({ isOpen: false, path: '', name: '' })
 
+  // Rename modal state
+  const [renameModal, setRenameModal] = useState<{
+    isOpen: boolean
+    path: string
+    name: string
+  }>({ isOpen: false, path: '', name: '' })
+
+  // Drag and drop state
+  const [isDragOver, setIsDragOver] = useState(false)
+
   const handleAddFolder = async () => {
     const path = await window.api.selectFolder()
     if (path) {
@@ -67,10 +80,56 @@ export function Sidebar() {
     setDeleteModal({ isOpen: true, path, name })
   }
 
+  const handleRenameNote = (path: string, name: string) => {
+    setRenameModal({ isOpen: true, path, name })
+  }
+
   const confirmDelete = async () => {
     await deleteNote(deleteModal.path)
     setDeleteModal({ isOpen: false, path: '', name: '' })
   }
+
+  const confirmRename = async (newName: string) => {
+    await renameNote(renameModal.path, newName)
+    setRenameModal({ isOpen: false, path: '', name: '' })
+  }
+
+  // Drag and drop handlers
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+  }, [])
+
+  const handleDrop = useCallback(
+    async (e: React.DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setIsDragOver(false)
+
+      const items = e.dataTransfer.items
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i]
+        if (item.kind === 'file') {
+          const entry = item.webkitGetAsEntry?.()
+          if (entry?.isDirectory) {
+            // For directories, we need to get the path from the file
+            const file = item.getAsFile()
+            if (file && 'path' in file) {
+              await addSource((file as File & { path: string }).path)
+            }
+          }
+        }
+      }
+    },
+    [addSource]
+  )
 
   if (isSidebarCollapsed) {
     return null
@@ -79,8 +138,14 @@ export function Sidebar() {
   return (
     <>
       <aside
-        className="flex flex-col bg-bg-elevated border-r border-border-subtle overflow-hidden"
+        className={clsx(
+          'flex flex-col bg-bg-elevated border-r border-border-subtle overflow-hidden transition-colors',
+          isDragOver && 'bg-accent-cyan/10 border-accent-cyan'
+        )}
         style={{ width: sidebarWidth }}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
       >
         {/* Header */}
         <div className="flex items-center justify-between h-14 px-4 border-b border-border-subtle">
@@ -136,6 +201,7 @@ export function Sidebar() {
             <div className="flex flex-col items-center justify-center h-full px-4 text-center">
               <Folder className="w-12 h-12 text-text-muted mb-3" />
               <p className="text-text-secondary text-sm mb-2">No folders added</p>
+              <p className="text-text-muted text-xs mb-3">Drag & drop a folder here or</p>
               <button onClick={handleAddFolder} className="btn-primary text-sm">
                 <FolderPlus className="w-4 h-4" />
                 Add Folder
@@ -153,6 +219,7 @@ export function Sidebar() {
                 onRemove={() => removeSource(source.path)}
                 onCreateNote={() => handleCreateNote(source.path, source.name)}
                 onDeleteNote={handleDeleteNote}
+                onRenameNote={handleRenameNote}
                 isValid={source.isValid}
                 error={source.error}
                 isFiltered={!!activeTagFilter}
@@ -180,6 +247,14 @@ export function Sidebar() {
         onConfirm={confirmDelete}
         onCancel={() => setDeleteModal({ isOpen: false, path: '', name: '' })}
       />
+
+      {/* Rename Modal */}
+      <RenameModal
+        isOpen={renameModal.isOpen}
+        currentName={renameModal.name}
+        onClose={() => setRenameModal({ isOpen: false, path: '', name: '' })}
+        onRename={confirmRename}
+      />
     </>
   )
 }
@@ -193,6 +268,7 @@ interface FolderSectionProps {
   onRemove: () => void
   onCreateNote: () => void
   onDeleteNote: (path: string, name: string) => void
+  onRenameNote: (path: string, name: string) => void
   isValid?: boolean
   error?: string
   isFiltered?: boolean
@@ -206,6 +282,7 @@ function FolderSection({
   onRemove,
   onCreateNote,
   onDeleteNote,
+  onRenameNote,
   isValid = true,
   error,
   isFiltered = false,
@@ -303,6 +380,7 @@ function FolderSection({
                 currentFilePath={currentFilePath}
                 onFileSelect={onFileSelect}
                 onDeleteNote={onDeleteNote}
+                onRenameNote={onRenameNote}
               />
             ))
           )}
@@ -318,9 +396,10 @@ interface FileTreeItemProps {
   currentFilePath?: string
   onFileSelect: (path: string) => void
   onDeleteNote: (path: string, name: string) => void
+  onRenameNote: (path: string, name: string) => void
 }
 
-function FileTreeItem({ file, depth, currentFilePath, onFileSelect, onDeleteNote }: FileTreeItemProps) {
+function FileTreeItem({ file, depth, currentFilePath, onFileSelect, onDeleteNote, onRenameNote }: FileTreeItemProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const isActive = file.path === currentFilePath
 
@@ -351,6 +430,7 @@ function FileTreeItem({ file, depth, currentFilePath, onFileSelect, onDeleteNote
                 currentFilePath={currentFilePath}
                 onFileSelect={onFileSelect}
                 onDeleteNote={onDeleteNote}
+                onRenameNote={onRenameNote}
               />
             ))}
           </div>
@@ -380,6 +460,18 @@ function FileTreeItem({ file, depth, currentFilePath, onFileSelect, onDeleteNote
       >
         <FileText className="w-3.5 h-3.5 text-accent-cyan flex-shrink-0" />
         <span className="text-sm truncate">{fileName}</span>
+      </button>
+
+      {/* Rename button */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          onRenameNote(file.path, file.name)
+        }}
+        className="p-1 rounded transition-all flex-shrink-0 opacity-0 group-hover/file:opacity-100 text-text-muted hover:text-accent-cyan hover:bg-bg-hover"
+        title="Rename note"
+      >
+        <Edit3 className="w-3 h-3" />
       </button>
 
       {/* Delete button */}
