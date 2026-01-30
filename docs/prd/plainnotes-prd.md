@@ -5,8 +5,8 @@
 | Field | Value |
 |-------|-------|
 | Project | PlainNotes |
-| Version | 1.2 |
-| Status | Complete (Epic 1 & Epic 2 Done) |
+| Version | 1.3 |
+| Status | MVP Complete |
 | Author | Orion (AIOS Master) |
 | Created | 2026-01-30 |
 
@@ -36,6 +36,7 @@ A solução proposta é um editor desktop leve que lê/escreve arquivos .txt pur
 | 2026-01-30 | 1.0 | Initial PRD creation | Orion |
 | 2026-01-30 | 1.1 | Epic 1 QA Review - PASS (6/6 stories complete) | Quinn (QA) |
 | 2026-01-30 | 1.2 | Epic 2 QA Review - PASS (4/4 stories complete) | Quinn (QA) |
+| 2026-01-30 | 1.3 | MVP Polish - Missing features implemented | Dex (Dev) |
 
 ---
 
@@ -437,6 +438,29 @@ Implementar funcionalidades de produtividade: autosave, recentes, busca global e
 - Tag-based filtering (#tag syntax)
 - Keyboard-first workflow
 - Status bar with real-time stats
+
+---
+
+### MVP Polish - Missing Features
+
+**Date:** 2026-01-30
+**Implementer:** Dex (Dev Agent)
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| FR12: Rename Notes | ✅ DONE | RenameModal + rename button in file tree |
+| FR5: Image Rendering | ✅ DONE | Inline image display with error handling |
+| Clickable Links | ✅ DONE | Opens external URLs in default browser |
+| Drag & Drop Folders | ✅ DONE | Drop folders directly on sidebar to add |
+
+**Files Implemented:**
+- `src/renderer/components/modals/RenameModal.tsx` - Rename note modal
+- `src/renderer/components/editor/extensions/markdown-preview.ts` - Image widget
+- `src/renderer/components/editor/MarkdownEditor.tsx` - Link click handler
+- `src/renderer/components/layout/Sidebar.tsx` - Drag/drop + rename UI
+- `src/renderer/stores/appStore.ts` - renameNote action
+
+**MVP Status:** ✅ All 14 Functional Requirements implemented
 
 ---
 
