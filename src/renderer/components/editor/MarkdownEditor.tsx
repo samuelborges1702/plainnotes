@@ -255,5 +255,35 @@ export function MarkdownEditor({ content, onChange, onSave }: MarkdownEditorProp
     updateContent(content)
   }, [content, updateContent])
 
+  // Listen for scroll-to-line events from global search
+  useEffect(() => {
+    const handleScrollToLine = (e: CustomEvent<{ lineNumber: number }>) => {
+      const view = viewRef.current
+      if (!view) return
+
+      const { lineNumber } = e.detail
+      const doc = view.state.doc
+
+      // Ensure line number is within bounds
+      const safeLineNumber = Math.min(Math.max(1, lineNumber), doc.lines)
+      const line = doc.line(safeLineNumber)
+
+      // Scroll to line and place cursor at start of line
+      view.dispatch({
+        selection: { anchor: line.from },
+        scrollIntoView: true,
+        effects: EditorView.scrollIntoView(line.from, { y: 'center' }),
+      })
+
+      // Focus the editor
+      view.focus()
+    }
+
+    window.addEventListener('scroll-to-line', handleScrollToLine as EventListener)
+    return () => {
+      window.removeEventListener('scroll-to-line', handleScrollToLine as EventListener)
+    }
+  }, [])
+
   return <div ref={editorRef} className="h-full w-full overflow-hidden" />
 }
