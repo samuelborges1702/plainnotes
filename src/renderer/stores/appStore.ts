@@ -39,6 +39,9 @@ interface AppState {
   saveFile: () => Promise<void>
   setSaveStatus: (status: 'idle' | 'saving' | 'saved' | 'error') => void
 
+  createNote: (folderPath: string, name: string) => Promise<void>
+  deleteNote: (path: string) => Promise<void>
+
   addToRecent: (path: string) => void
   clearRecent: () => void
 
@@ -220,6 +223,32 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   setSaveStatus: (status) => set({ saveStatus: status }),
+
+  // Create a new note
+  createNote: async (folderPath: string, name: string) => {
+    const newPath = await window.api.createFile(folderPath, name)
+    await get().refreshFileTree()
+    await get().openFile(newPath)
+    await get().buildSearchIndex()
+  },
+
+  // Delete a note
+  deleteNote: async (path: string) => {
+    const currentFile = get().currentFile
+
+    // Close file if it's the one being deleted
+    if (currentFile?.path === path) {
+      get().closeFile()
+    }
+
+    await window.api.deleteFile(path)
+    await get().refreshFileTree()
+
+    // Remove from recent files
+    const recentFiles = get().recentFiles.filter((p) => p !== path)
+    set({ recentFiles })
+    await window.api.setConfig('recentFiles', recentFiles)
+  },
 
   // Add to recent files
   addToRecent: (path: string) => {

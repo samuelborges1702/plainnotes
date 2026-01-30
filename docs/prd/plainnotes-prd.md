@@ -5,8 +5,8 @@
 | Field | Value |
 |-------|-------|
 | Project | PlainNotes |
-| Version | 1.0 |
-| Status | Draft |
+| Version | 1.1 |
+| Status | In Progress (Epic 1 Complete) |
 | Author | Orion (AIOS Master) |
 | Created | 2026-01-30 |
 
@@ -34,6 +34,7 @@ A solução proposta é um editor desktop leve que lê/escreve arquivos .txt pur
 | Date | Version | Description | Author |
 |------|---------|-------------|--------|
 | 2026-01-30 | 1.0 | Initial PRD creation | Orion |
+| 2026-01-30 | 1.1 | Epic 1 QA Review - PASS (6/6 stories complete) | Quinn (QA) |
 
 ---
 
@@ -282,6 +283,35 @@ Implementar funcionalidades de produtividade: autosave, recentes, busca global e
 4. Opção de deletar nota (via context menu ou botão)
 5. Confirmação antes de deletar
 6. Nota deletada é removida do filesystem e da UI
+
+---
+
+### Epic 1 - QA Review Summary
+
+**Review Date:** 2026-01-30
+**Reviewer:** Quinn (QA Agent)
+**Gate Decision:** ✅ **PASS**
+
+| Story | Status | Notes |
+|-------|--------|-------|
+| 1.1 Project Setup | ✅ PASS | Electron + React + TS + Vite + ESLint configured |
+| 1.2 Folder Source Management | ✅ PASS | Add/remove folders with persistence |
+| 1.3 File Tree Sidebar | ✅ PASS | Recursive tree with expand/collapse |
+| 1.4 Basic Text Editor | ✅ PASS | CodeMirror 6 with Ctrl+S save |
+| 1.5 Markdown Live Preview | ✅ PASS | Headers, bold, italic, code, checkboxes, lists |
+| 1.6 Create/Delete Notes | ✅ PASS | Modal for create, confirmation for delete |
+
+**Quality Metrics:**
+- Lint: 0 warnings
+- TypeCheck: No errors
+- Tests: 15 passed
+- Build: Success
+
+**Files Implemented:**
+- `src/main/` - Electron main process (IPC, FileService, ConfigStore, SearchIndex)
+- `src/renderer/` - React UI (Sidebar, Editor, MarkdownEditor, modals)
+- `src/shared/` - Types and constants
+- `src/preload/` - Context bridge API
 
 ---
 
