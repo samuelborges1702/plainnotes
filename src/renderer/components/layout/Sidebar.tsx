@@ -149,14 +149,19 @@ export function Sidebar() {
       >
         {/* Header */}
         <div className="flex items-center justify-between h-14 px-4 border-b border-border-subtle">
-          <h2 className="text-lg font-bold text-text-primary">Notes</h2>
-          <button
-            onClick={handleAddFolder}
-            className="p-1.5 rounded-md text-text-secondary hover:text-accent-cyan hover:bg-bg-hover transition-colors"
-            title="Add Folder"
-          >
-            <FolderPlus className="w-5 h-5" />
-          </button>
+          <h1 className="text-lg font-bold">
+            <span className="text-text-primary">Plain</span>
+            <span className="text-gradient-cyan">Notes</span>
+          </h1>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleAddFolder}
+              className="p-1.5 rounded-md text-text-muted hover:text-accent-cyan hover:border hover:border-accent-cyan transition-colors"
+              title="Add Folder"
+            >
+              <FolderPlus className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Tags Section */}

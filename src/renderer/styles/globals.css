@@ -59,6 +59,13 @@
     -webkit-app-region: no-drag;
   }
 
+  /* Window control buttons - ensure clickable */
+  .titlebar-no-drag button {
+    -webkit-app-region: no-drag;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+
   /* Accent border glow */
   .border-glow-cyan {
     box-shadow: 0 0 0 1px theme('colors.accent.cyan / 50%'),

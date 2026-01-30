@@ -15,6 +15,10 @@ const configStore = new ConfigStore()
 function createWindow(): void {
   const bounds = configStore.get('windowBounds')
 
+  // Platform-specific window configuration
+  const isMac = process.platform === 'darwin'
+  const isWin = process.platform === 'win32'
+
   mainWindow = new BrowserWindow({
     width: bounds.width,
     height: bounds.height,
@@ -23,9 +27,17 @@ function createWindow(): void {
     minWidth: 800,
     minHeight: 600,
     backgroundColor: '#141414',
-    frame: false, // Custom title bar
-    titleBarStyle: 'hidden',
-    trafficLightPosition: { x: 16, y: 16 },
+    frame: false, // Custom title bar on all platforms
+    // macOS specific
+    ...(isMac && {
+      titleBarStyle: 'hidden',
+      trafficLightPosition: { x: 16, y: 16 },
+    }),
+    // Windows specific - ensure proper frameless window
+    ...(isWin && {
+      titleBarStyle: 'hidden',
+      titleBarOverlay: false,
+    }),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       nodeIntegration: false,
