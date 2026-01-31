@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import { EditorState } from '@codemirror/state'
 import { EditorView, keymap, placeholder, drawSelection } from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
@@ -7,6 +7,7 @@ import { syntaxHighlighting, HighlightStyle } from '@codemirror/language'
 import { tags } from '@lezer/highlight'
 import { markdownPreviewPlugin } from './extensions/markdown-preview'
 import { checkboxPlugin } from './extensions/checkbox-widget'
+import { ContextMenu } from './ContextMenu'
 
 interface MarkdownEditorProps {
   content: string
@@ -14,19 +15,27 @@ interface MarkdownEditorProps {
   onSave: () => void
 }
 
-// Dark theme colors matching our design system
+interface ContextMenuState {
+  visible: boolean
+  x: number
+  y: number
+}
+
+// Dark theme colors matching wireframe design system
 const darkTheme = EditorView.theme(
   {
     '&': {
       backgroundColor: '#141414',
-      color: '#e5e5e5',
+      color: '#f0f0f0',
       height: '100%',
     },
     '.cm-content': {
-      fontFamily: '"JetBrains Mono", "Fira Code", Consolas, monospace',
-      fontSize: '14px',
-      lineHeight: '1.7',
-      padding: '24px',
+      fontFamily: '"Inter", -apple-system, sans-serif',
+      fontSize: '16px',
+      lineHeight: '1.8',
+      padding: '48px 64px',
+      maxWidth: '800px',
+      margin: '0 auto',
       caretColor: '#00d4ff',
     },
     '.cm-cursor': {
@@ -34,10 +43,10 @@ const darkTheme = EditorView.theme(
       borderLeftWidth: '2px',
     },
     '.cm-selectionBackground': {
-      backgroundColor: '#00d4ff30 !important',
+      backgroundColor: 'rgba(0, 212, 255, 0.25) !important',
     },
     '&.cm-focused .cm-selectionBackground': {
-      backgroundColor: '#00d4ff30 !important',
+      backgroundColor: 'rgba(0, 212, 255, 0.25) !important',
     },
     '.cm-gutters': {
       backgroundColor: '#141414',
@@ -47,108 +56,162 @@ const darkTheme = EditorView.theme(
       backgroundColor: '#1f1f1f',
     },
     '.cm-activeLine': {
-      backgroundColor: '#1a1a1a',
+      backgroundColor: 'transparent',
     },
     '.cm-scroller': {
       overflow: 'auto',
     },
-    // Markdown styling
+    // Markdown styling - Matching wireframe
     '.cm-heading-1': {
-      fontSize: '1.875em',
-      fontWeight: 'bold',
-      color: '#00d4ff',
-      lineHeight: '1.4',
+      fontSize: '32px',
+      fontWeight: '700',
+      color: '#f0f0f0',
+      lineHeight: '1.2',
+      display: 'block',
+      paddingBottom: '12px',
+      marginBottom: '24px',
+      borderBottom: '2px solid #00d4ff',
     },
     '.cm-heading-2': {
-      fontSize: '1.5em',
-      fontWeight: 'bold',
-      color: '#00d4ff',
+      fontSize: '22px',
+      fontWeight: '600',
+      color: '#f0f0f0',
       lineHeight: '1.4',
+      display: 'block',
+      paddingLeft: '12px',
+      marginTop: '40px',
+      marginBottom: '16px',
+      borderLeft: '3px solid #aa77ff',
     },
     '.cm-heading-3': {
-      fontSize: '1.25em',
-      fontWeight: 'bold',
-      color: '#00d4ff',
+      fontSize: '18px',
+      fontWeight: '600',
+      color: '#f0f0f0',
       lineHeight: '1.4',
+      display: 'block',
+      paddingBottom: '6px',
+      marginTop: '32px',
+      marginBottom: '12px',
+      borderBottom: '1px solid #333333',
     },
     '.cm-heading-4': {
-      fontSize: '1.125em',
-      fontWeight: 'bold',
-      color: '#00d4ff',
+      fontSize: '16px',
+      fontWeight: '600',
+      color: '#f0f0f0',
     },
     '.cm-strong': {
-      fontWeight: 'bold',
-      color: '#ffcc00',
+      fontWeight: '600',
+      color: '#f0f0f0',
     },
     '.cm-emphasis': {
       fontStyle: 'italic',
-      color: '#aa77ff',
+      color: '#a0a0a0',
     },
     '.cm-strikethrough': {
       textDecoration: 'line-through',
-      color: '#666666',
+      color: '#606060',
     },
     '.cm-code': {
       fontFamily: '"JetBrains Mono", monospace',
-      backgroundColor: '#1f1f1f',
-      padding: '2px 6px',
+      fontSize: '14px',
+      backgroundColor: '#222222',
+      padding: '3px 7px',
       borderRadius: '4px',
-      color: '#ff7744',
+      border: '1px solid #ff7744',
+      color: '#f0f0f0',
     },
     '.cm-code-block': {
-      backgroundColor: '#1a1a1a',
-      borderLeft: '3px solid #00d4ff',
-      paddingLeft: '12px',
+      fontFamily: '"JetBrains Mono", monospace',
+      fontSize: '14px',
+      backgroundColor: '#222222',
+      borderLeft: '3px solid #00ff88',
+      paddingLeft: '20px',
+      paddingTop: '20px',
+      paddingBottom: '20px',
+      marginTop: '24px',
+      marginBottom: '24px',
+      borderRadius: '6px',
+      display: 'block',
+      color: '#a0a0a0',
+      lineHeight: '1.6',
     },
     '.cm-link': {
-      color: '#00d4ff',
-      textDecoration: 'underline',
+      color: '#f0f0f0',
+      textDecoration: 'none',
+      borderBottom: '1px solid #00d4ff',
       cursor: 'pointer',
+      transition: 'border-color 150ms ease',
+    },
+    '.cm-link:hover': {
+      borderBottomWidth: '2px',
     },
     '.cm-url': {
-      color: '#666666',
+      color: '#606060',
     },
     '.cm-hr': {
       display: 'block',
-      borderTop: '1px solid #333333',
-      margin: '16px 0',
+      height: '1px',
+      background: 'linear-gradient(90deg, transparent, #00d4ff 20%, #aa77ff 50%, #ff3399 80%, transparent)',
+      margin: '40px 0',
+      border: 'none',
     },
     '.cm-list-bullet': {
-      color: '#00ff88',
+      color: '#ff3399',
+      fontWeight: 'bold',
     },
     '.cm-task-marker': {
       color: '#ff3399',
     },
     '.cm-tag': {
-      color: '#aa77ff',
-      backgroundColor: '#aa77ff15',
-      padding: '1px 4px',
-      borderRadius: '3px',
+      color: '#a0a0a0',
+      backgroundColor: 'transparent',
+      padding: '2px 10px',
+      border: '1px solid #aa77ff',
+      borderRadius: '20px',
+      fontSize: '13px',
+      fontWeight: '500',
+      transition: 'all 150ms ease',
+    },
+    '.cm-tag:hover': {
+      color: '#f0f0f0',
+      boxShadow: '0 0 12px rgba(170, 119, 255, 0.4)',
     },
     '.cm-blockquote': {
       borderLeft: '3px solid #ff3399',
       paddingLeft: '12px',
-      color: '#a3a3a3',
+      color: '#a0a0a0',
       fontStyle: 'italic',
+      marginTop: '16px',
+      marginBottom: '16px',
     },
-    // Checkbox widget styling
+    // Checkbox widget styling - wireframe style
     '.cm-checkbox-widget': {
       display: 'inline-flex',
       alignItems: 'center',
       verticalAlign: 'middle',
     },
     '.cm-task-checkbox': {
-      width: '16px',
-      height: '16px',
-      margin: '0 4px 0 0',
+      width: '18px',
+      height: '18px',
+      margin: '0 12px 0 0',
       cursor: 'pointer',
-      accentColor: '#00ff88',
-      backgroundColor: '#1f1f1f',
-      border: '1px solid #404040',
-      borderRadius: '3px',
+      appearance: 'none',
+      backgroundColor: 'transparent',
+      border: '2px solid #606060',
+      borderRadius: '4px',
+      transition: 'all 150ms ease',
+    },
+    '.cm-task-checkbox:hover': {
+      borderColor: '#00d4ff',
     },
     '.cm-task-checkbox:checked': {
-      backgroundColor: '#00ff88',
+      borderColor: '#00ff88',
+      backgroundColor: 'transparent',
+    },
+    // Paragraph styling
+    '.cm-line': {
+      color: '#a0a0a0',
+      marginBottom: '18px',
     },
   },
   { dark: true }
@@ -173,6 +236,11 @@ const markdownHighlighting = HighlightStyle.define([
 export function MarkdownEditor({ content, onChange, onSave }: MarkdownEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
+  const [contextMenu, setContextMenu] = useState<ContextMenuState>({
+    visible: false,
+    x: 0,
+    y: 0,
+  })
 
   // Use refs for callbacks to avoid re-creating the editor on every prop change
   const onChangeRef = useRef(onChange)
@@ -182,6 +250,39 @@ export function MarkdownEditor({ content, onChange, onSave }: MarkdownEditorProp
   // Keep refs updated
   onChangeRef.current = onChange
   onSaveRef.current = onSave
+
+  // Handle context menu insert
+  const handleContextMenuInsert = useCallback((markdown: string, wrap?: boolean) => {
+    const view = viewRef.current
+    if (!view) return
+
+    const { from, to } = view.state.selection.main
+    const selectedText = view.state.doc.sliceString(from, to)
+
+    let insertText: string
+    let cursorOffset: number
+
+    if (wrap && selectedText) {
+      // Wrap selected text with markdown syntax
+      insertText = `${markdown}${selectedText}${markdown}`
+      cursorOffset = insertText.length
+    } else if (wrap) {
+      // Insert markers with cursor in middle
+      insertText = `${markdown}${markdown}`
+      cursorOffset = markdown.length
+    } else {
+      // Just insert the markdown
+      insertText = markdown
+      cursorOffset = insertText.length
+    }
+
+    view.dispatch({
+      changes: { from, to, insert: insertText },
+      selection: { anchor: from + cursorOffset },
+    })
+
+    view.focus()
+  }, [])
 
   // Handle content updates from outside
   const updateContent = useCallback((newContent: string) => {
@@ -204,11 +305,82 @@ export function MarkdownEditor({ content, onChange, onSave }: MarkdownEditorProp
   useEffect(() => {
     if (!editorRef.current) return
 
+    // Helper to wrap selection or insert at cursor
+    const wrapSelection = (view: EditorView, marker: string) => {
+      const { from, to } = view.state.selection.main
+      const selectedText = view.state.doc.sliceString(from, to)
+
+      if (selectedText) {
+        view.dispatch({
+          changes: { from, to, insert: `${marker}${selectedText}${marker}` },
+          selection: { anchor: from + marker.length + selectedText.length + marker.length },
+        })
+      } else {
+        view.dispatch({
+          changes: { from, insert: `${marker}${marker}` },
+          selection: { anchor: from + marker.length },
+        })
+      }
+      return true
+    }
+
+    const insertAtLineStart = (view: EditorView, prefix: string) => {
+      const { from } = view.state.selection.main
+      const line = view.state.doc.lineAt(from)
+      view.dispatch({
+        changes: { from: line.from, insert: prefix },
+        selection: { anchor: line.from + prefix.length },
+      })
+      return true
+    }
+
     const saveKeymap = keymap.of([
       {
         key: 'Mod-s',
         run: () => {
           onSaveRef.current()
+          return true
+        },
+      },
+      {
+        key: 'Mod-b',
+        run: (view) => wrapSelection(view, '**'),
+      },
+      {
+        key: 'Mod-i',
+        run: (view) => wrapSelection(view, '*'),
+      },
+      {
+        key: 'Mod-Shift-s',
+        run: (view) => wrapSelection(view, '~~'),
+      },
+      {
+        key: 'Mod-`',
+        run: (view) => wrapSelection(view, '`'),
+      },
+      {
+        key: 'Mod-1',
+        run: (view) => insertAtLineStart(view, '# '),
+      },
+      {
+        key: 'Mod-2',
+        run: (view) => insertAtLineStart(view, '## '),
+      },
+      {
+        key: 'Mod-3',
+        run: (view) => insertAtLineStart(view, '### '),
+      },
+      {
+        key: 'Mod-k',
+        run: (view) => {
+          const { from, to } = view.state.selection.main
+          const selectedText = view.state.doc.sliceString(from, to)
+          const linkText = selectedText || 'link text'
+          const insert = `[${linkText}](url)`
+          view.dispatch({
+            changes: { from, to, insert },
+            selection: { anchor: from + linkText.length + 3, head: from + linkText.length + 6 },
+          })
           return true
         },
       },
@@ -220,8 +392,17 @@ export function MarkdownEditor({ content, onChange, onSave }: MarkdownEditorProp
       }
     })
 
-    // Handle clicks on links
+    // Handle clicks on links and context menu
     const clickHandler = EditorView.domEventHandlers({
+      contextmenu: (event) => {
+        event.preventDefault()
+        setContextMenu({
+          visible: true,
+          x: event.clientX,
+          y: event.clientY,
+        })
+        return true
+      },
       click: (event, view) => {
         const target = event.target as HTMLElement
         // Check if clicked element or parent has cm-link class
@@ -317,5 +498,17 @@ export function MarkdownEditor({ content, onChange, onSave }: MarkdownEditorProp
     }
   }, [])
 
-  return <div ref={editorRef} className="h-full w-full overflow-hidden" />
+  return (
+    <>
+      <div ref={editorRef} className="h-full w-full overflow-hidden" />
+      {contextMenu.visible && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu({ visible: false, x: 0, y: 0 })}
+          onInsert={handleContextMenuInsert}
+        />
+      )}
+    </>
+  )
 }
