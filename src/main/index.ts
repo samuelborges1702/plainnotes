@@ -39,7 +39,7 @@ function createWindow(): void {
       titleBarOverlay: false,
     }),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(__dirname, '../preload/index.cjs'),
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: false,

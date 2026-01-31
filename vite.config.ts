@@ -40,7 +40,7 @@ export default defineConfig({
               external: ['electron'],
               output: {
                 format: 'cjs',
-                entryFileNames: 'index.js',
+                entryFileNames: 'index.cjs',
               },
             },
           },
