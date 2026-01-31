@@ -1,6 +1,6 @@
 {
   "name": "plainnotes",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "A lightweight desktop note-taking app with live markdown preview",
   "type": "module",
   "main": "dist-electron/main/index.js",
