@@ -5,11 +5,19 @@ import { fileService } from '../services/FileService'
 import { searchIndex } from '../services/SearchIndex'
 import type { AppConfig } from '@shared/types/config'
 
+// Debug helper
+const debugLog = (action: string, ...args: unknown[]) => {
+  console.log(`[Main IPC] ${action}:`, ...args)
+}
+
 export function registerIpcHandlers(mainWindow: BrowserWindow, configStore: ConfigStore): void {
+  debugLog('registerIpcHandlers', 'Starting registration...')
+
   // Initialize file service with allowed roots from config
   const updateAllowedRoots = () => {
     const sources = configStore.get('sources')
     fileService.setAllowedRoots(sources.map((s) => s.path))
+    debugLog('updateAllowedRoots', sources.length, 'sources configured')
   }
   updateAllowedRoots()
 
@@ -48,16 +56,26 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, configStore: Conf
 
   // Folder operations
   ipcMain.handle(IPC_CHANNELS.FOLDER_SELECT, async () => {
-    const result = await dialog.showOpenDialog(mainWindow, {
-      properties: ['openDirectory'],
-      title: 'Select Notes Folder',
-    })
+    debugLog('FOLDER_SELECT', 'Handler called, showing dialog...')
+    try {
+      const result = await dialog.showOpenDialog(mainWindow, {
+        properties: ['openDirectory'],
+        title: 'Select Notes Folder',
+      })
 
-    if (result.canceled || result.filePaths.length === 0) {
-      return null
+      debugLog('FOLDER_SELECT', 'Dialog result:', result)
+
+      if (result.canceled || result.filePaths.length === 0) {
+        debugLog('FOLDER_SELECT', 'Canceled or no selection')
+        return null
+      }
+
+      debugLog('FOLDER_SELECT', 'Selected path:', result.filePaths[0])
+      return result.filePaths[0]
+    } catch (error) {
+      debugLog('FOLDER_SELECT', 'ERROR:', error)
+      throw error
     }
-
-    return result.filePaths[0]
   })
 
   // Config operations
@@ -90,10 +108,12 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, configStore: Conf
 
   // Window operations
   ipcMain.on(IPC_CHANNELS.WINDOW_MINIMIZE, () => {
+    debugLog('WINDOW_MINIMIZE', 'Handler called')
     mainWindow.minimize()
   })
 
   ipcMain.on(IPC_CHANNELS.WINDOW_MAXIMIZE, () => {
+    debugLog('WINDOW_MAXIMIZE', 'Handler called, isMaximized:', mainWindow.isMaximized())
     if (mainWindow.isMaximized()) {
       mainWindow.unmaximize()
     } else {
@@ -102,10 +122,15 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, configStore: Conf
   })
 
   ipcMain.on(IPC_CHANNELS.WINDOW_CLOSE, () => {
+    debugLog('WINDOW_CLOSE', 'Handler called')
     mainWindow.close()
   })
 
   ipcMain.handle(IPC_CHANNELS.WINDOW_IS_MAXIMIZED, () => {
-    return mainWindow.isMaximized()
+    const result = mainWindow.isMaximized()
+    debugLog('WINDOW_IS_MAXIMIZED', 'Result:', result)
+    return result
   })
+
+  debugLog('registerIpcHandlers', 'All handlers registered successfully!')
 }

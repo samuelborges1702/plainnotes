@@ -3,27 +3,53 @@ import { IPC_CHANNELS } from '../shared/constants/channels'
 import type { IpcApi } from '../shared/types/ipc'
 import type { AppConfig } from '../shared/types/config'
 
+// Debug helper
+const debugLog = (action: string, ...args: unknown[]) => {
+  console.log(`[Preload IPC] ${action}:`, ...args)
+}
+
 const api: IpcApi = {
   // File operations
-  readFile: (path: string) => ipcRenderer.invoke(IPC_CHANNELS.FILE_READ, path),
+  readFile: (path: string) => {
+    debugLog('readFile', path)
+    return ipcRenderer.invoke(IPC_CHANNELS.FILE_READ, path)
+  },
 
-  writeFile: (path: string, content: string) =>
-    ipcRenderer.invoke(IPC_CHANNELS.FILE_WRITE, path, content),
+  writeFile: (path: string, content: string) => {
+    debugLog('writeFile', path)
+    return ipcRenderer.invoke(IPC_CHANNELS.FILE_WRITE, path, content)
+  },
 
-  createFile: (folderPath: string, name: string) =>
-    ipcRenderer.invoke(IPC_CHANNELS.FILE_CREATE, folderPath, name),
+  createFile: (folderPath: string, name: string) => {
+    debugLog('createFile', folderPath, name)
+    return ipcRenderer.invoke(IPC_CHANNELS.FILE_CREATE, folderPath, name)
+  },
 
-  deleteFile: (path: string) => ipcRenderer.invoke(IPC_CHANNELS.FILE_DELETE, path),
+  deleteFile: (path: string) => {
+    debugLog('deleteFile', path)
+    return ipcRenderer.invoke(IPC_CHANNELS.FILE_DELETE, path)
+  },
 
-  renameFile: (oldPath: string, newName: string) =>
-    ipcRenderer.invoke(IPC_CHANNELS.FILE_RENAME, oldPath, newName),
+  renameFile: (oldPath: string, newName: string) => {
+    debugLog('renameFile', oldPath, newName)
+    return ipcRenderer.invoke(IPC_CHANNELS.FILE_RENAME, oldPath, newName)
+  },
 
-  listFiles: (folderPath: string) => ipcRenderer.invoke(IPC_CHANNELS.FILE_LIST, folderPath),
+  listFiles: (folderPath: string) => {
+    debugLog('listFiles', folderPath)
+    return ipcRenderer.invoke(IPC_CHANNELS.FILE_LIST, folderPath)
+  },
 
-  fileExists: (path: string) => ipcRenderer.invoke(IPC_CHANNELS.FILE_EXISTS, path),
+  fileExists: (path: string) => {
+    debugLog('fileExists', path)
+    return ipcRenderer.invoke(IPC_CHANNELS.FILE_EXISTS, path)
+  },
 
   // Folder operations
-  selectFolder: () => ipcRenderer.invoke(IPC_CHANNELS.FOLDER_SELECT),
+  selectFolder: () => {
+    debugLog('selectFolder', 'requesting dialog')
+    return ipcRenderer.invoke(IPC_CHANNELS.FOLDER_SELECT)
+  },
 
   // Config operations
   getConfig: <K extends keyof AppConfig>(key: K) =>
@@ -51,10 +77,22 @@ const api: IpcApi = {
   },
 
   // Window operations
-  minimizeWindow: () => ipcRenderer.send(IPC_CHANNELS.WINDOW_MINIMIZE),
-  maximizeWindow: () => ipcRenderer.send(IPC_CHANNELS.WINDOW_MAXIMIZE),
-  closeWindow: () => ipcRenderer.send(IPC_CHANNELS.WINDOW_CLOSE),
-  isMaximized: () => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_IS_MAXIMIZED),
+  minimizeWindow: () => {
+    debugLog('minimizeWindow', 'sending')
+    ipcRenderer.send(IPC_CHANNELS.WINDOW_MINIMIZE)
+  },
+  maximizeWindow: () => {
+    debugLog('maximizeWindow', 'sending')
+    ipcRenderer.send(IPC_CHANNELS.WINDOW_MAXIMIZE)
+  },
+  closeWindow: () => {
+    debugLog('closeWindow', 'sending')
+    ipcRenderer.send(IPC_CHANNELS.WINDOW_CLOSE)
+  },
+  isMaximized: () => {
+    debugLog('isMaximized', 'checking')
+    return ipcRenderer.invoke(IPC_CHANNELS.WINDOW_IS_MAXIMIZED)
+  },
 }
 
 contextBridge.exposeInMainWorld('api', api)

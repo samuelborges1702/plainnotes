@@ -12,14 +12,21 @@ export function TitleBar() {
     checkMaximized()
   }, [])
 
-  const handleMinimize = () => window.api.minimizeWindow()
+  const handleMinimize = () => {
+    console.log('[TitleBar] handleMinimize clicked!')
+    window.api.minimizeWindow()
+  }
 
   const handleMaximize = () => {
+    console.log('[TitleBar] handleMaximize clicked!')
     window.api.maximizeWindow()
     setIsMaximized(!isMaximized)
   }
 
-  const handleClose = () => window.api.closeWindow()
+  const handleClose = () => {
+    console.log('[TitleBar] handleClose clicked!')
+    window.api.closeWindow()
+  }
 
   return (
     <header className="flex items-center justify-between h-10 bg-bg-elevated border-b border-border-subtle select-none z-50">

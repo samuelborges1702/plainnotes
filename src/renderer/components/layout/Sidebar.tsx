@@ -71,9 +71,17 @@ export function Sidebar({ onOpenSettings }: SidebarProps) {
   const [isDragOver, setIsDragOver] = useState(false)
 
   const handleAddFolder = async () => {
-    const path = await window.api.selectFolder()
-    if (path) {
-      await addSource(path)
+    console.log('[Sidebar] handleAddFolder clicked!')
+    try {
+      console.log('[Sidebar] Calling window.api.selectFolder...')
+      const path = await window.api.selectFolder()
+      console.log('[Sidebar] selectFolder returned:', path)
+      if (path) {
+        await addSource(path)
+        console.log('[Sidebar] Source added successfully')
+      }
+    } catch (error) {
+      console.error('[Sidebar] Error in handleAddFolder:', error)
     }
   }
 
